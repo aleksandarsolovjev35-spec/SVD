@@ -155,6 +155,7 @@
     var desktopQuery = window.matchMedia("(min-width: 761px)");
     var isAnimating = false;
     var unlockTimer = null;
+    var transitionTimer = null;
     var WHEEL_THRESHOLD = 4;
     var EDGE = 48;
     var LOCK_MS = reduceMotion ? 0 : 850;
@@ -188,6 +189,13 @@
     function lock() {
       isAnimating = true;
       clearTimeout(unlockTimer);
+      clearTimeout(transitionTimer);
+      if (!reduceMotion) {
+        document.body.classList.add("is-slide-transitioning");
+        transitionTimer = setTimeout(function () {
+          document.body.classList.remove("is-slide-transitioning");
+        }, LOCK_MS);
+      }
       unlockTimer = setTimeout(function () {
         isAnimating = false;
       }, LOCK_MS);
