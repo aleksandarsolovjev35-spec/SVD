@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="m5title">
+  <title id="m5title">Свадебный узор — жемчужное кольцо с гранью, символ дресс-кода</title>
+  <circle cx="120" cy="120" r="104" fill="#f6ecdd"/>
+  <circle cx="120" cy="120" r="104" fill="none" stroke="#a9813f" stroke-width="2"/>
+  <circle cx="120" cy="120" r="94" fill="none" stroke="#cdae95" stroke-width="1"/>
+  <circle cx="120" cy="120" r="58" fill="none" stroke="#cdae95" stroke-width="1"/>
+  <g fill="#a9813f">
+    <circle cx="178" cy="120" r="4.2"/>
+    <circle cx="172.3" cy="94.8" r="4.2"/>
+    <circle cx="156.2" cy="74.7" r="4.2"/>
+    <circle cx="132.9" cy="63.5" r="4.2"/>
+    <circle cx="107.1" cy="63.5" r="4.2"/>
+    <circle cx="83.8" cy="74.7" r="4.2"/>
+    <circle cx="67.7" cy="94.8" r="4.2"/>
+    <circle cx="62" cy="120" r="4.2"/>
+    <circle cx="67.7" cy="145.2" r="4.2"/>
+    <circle cx="83.8" cy="165.3" r="4.2"/>
+    <circle cx="107.1" cy="176.6" r="4.2"/>
+    <circle cx="132.9" cy="176.6" r="4.2"/>
+    <circle cx="156.2" cy="165.3" r="4.2"/>
+    <circle cx="172.3" cy="145.2" r="4.2"/>
+  </g>
+  <path d="M120 98L142 120L120 142L98 120Z" fill="none" stroke="#7c1f2b" stroke-width="2.2" stroke-linejoin="round"/>
+  <circle cx="120" cy="120" r="3" fill="#7c1f2b"/>
+</svg>

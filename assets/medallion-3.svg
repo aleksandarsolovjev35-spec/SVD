@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="m3title">
+  <title id="m3title">Свадебный узор — солнечные лучи, символ дня торжества</title>
+  <circle cx="120" cy="120" r="104" fill="#f6ecdd"/>
+  <circle cx="120" cy="120" r="104" fill="none" stroke="#a9813f" stroke-width="2"/>
+  <circle cx="120" cy="120" r="94" fill="none" stroke="#cdae95" stroke-width="1"/>
+  <g stroke="#7c1f2b" stroke-linecap="round">
+    <line x1="140" y1="120" x2="182" y2="120" stroke-width="2.2"/>
+    <line x1="138.48" y1="112.35" x2="162.5" y2="102.4" stroke-width="1.4"/>
+    <line x1="134.14" y1="105.86" x2="163.84" y2="76.16" stroke-width="2.2"/>
+    <line x1="127.65" y1="101.52" x2="137.6" y2="77.5" stroke-width="1.4"/>
+    <line x1="120" y1="100" x2="120" y2="58" stroke-width="2.2"/>
+    <line x1="112.35" y1="101.52" x2="102.4" y2="77.5" stroke-width="1.4"/>
+    <line x1="105.86" y1="105.86" x2="76.16" y2="76.16" stroke-width="2.2"/>
+    <line x1="101.52" y1="112.35" x2="77.5" y2="102.4" stroke-width="1.4"/>
+    <line x1="100" y1="120" x2="58" y2="120" stroke-width="2.2"/>
+    <line x1="101.52" y1="127.65" x2="77.5" y2="137.6" stroke-width="1.4"/>
+    <line x1="105.86" y1="134.14" x2="76.16" y2="163.84" stroke-width="2.2"/>
+    <line x1="112.35" y1="138.48" x2="102.4" y2="162.5" stroke-width="1.4"/>
+    <line x1="120" y1="140" x2="120" y2="182" stroke-width="2.2"/>
+    <line x1="127.65" y1="138.48" x2="137.6" y2="162.5" stroke-width="1.4"/>
+    <line x1="134.14" y1="134.14" x2="163.84" y2="163.84" stroke-width="2.2"/>
+    <line x1="138.48" y1="127.65" x2="162.5" y2="137.6" stroke-width="1.4"/>
+  </g>
+  <circle cx="120" cy="120" r="16" fill="#f6ecdd" stroke="#a9813f" stroke-width="2"/>
+  <circle cx="120" cy="120" r="3" fill="#a9813f"/>
+</svg>
