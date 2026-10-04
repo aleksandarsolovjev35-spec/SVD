@@ -182,6 +182,13 @@
       });
     }
 
+    function refreshSlideLayout() {
+      if (!deckEnabled) return;
+      slides.forEach(function (slide) {
+        slide.classList.toggle("is-overflowing", slide.scrollHeight > slide.clientHeight + 2);
+      });
+    }
+
     function activateSlide(index, immediate) {
       index = Math.max(0, Math.min(slides.length - 1, index));
       if (!immediate && index === currentIndex) return;
@@ -191,6 +198,7 @@
       currentIndex = index;
       slides[currentIndex].scrollTop = 0;
       setSlideClasses();
+      refreshSlideLayout();
       setActive(slides[currentIndex].id || "");
       updatePresentationProgress();
       if (!immediate) {
@@ -214,7 +222,7 @@
       document.documentElement.classList.remove("presentation-mode");
       document.body.classList.remove("presentation-mode");
       slides.forEach(function (slide) {
-        slide.classList.remove("is-active");
+        slide.classList.remove("is-active", "is-overflowing");
         slide.scrollTop = 0;
       });
       isAnimating = false;
@@ -292,7 +300,10 @@
 
     if (deckQuery.addEventListener) deckQuery.addEventListener("change", syncDeckMode);
     else if (deckQuery.addListener) deckQuery.addListener(syncDeckMode);
-    window.addEventListener("resize", updatePresentationProgress, { passive: true });
+    window.addEventListener("resize", function () {
+      updatePresentationProgress();
+      refreshSlideLayout();
+    }, { passive: true });
     syncDeckMode();
   })();
 
