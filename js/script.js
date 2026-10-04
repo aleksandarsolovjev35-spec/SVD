@@ -141,17 +141,13 @@
     sections.forEach(function (s) { navObserver.observe(s); });
   }
 
-  /* ---------- One-screen-per-wheel-turn navigation ----------
-     Every wheel notch moves the page to the next screen-sized chunk
-     ("slide" — marked with [data-slide] in the HTML: whole sections, or
-     a smaller chunk inside a long section), like turning a page of the
-     invitation. A slide that is short enough to fully fit the viewport
-     is switched immediately on any wheel turn. A slide taller than the
-     viewport (e.g. the RSVP form) instead scrolls normally inside
-     itself — the jump to the next/previous slide only kicks in once the
-     user reaches that slide's own top/bottom edge, so nothing is ever
-     skipped past unread. Disabled below 761px so touch/mobile scrolling
-     stays natural. */
+  /* ---------- One-semantic-block-per-wheel-turn navigation ----------
+     Each meaningful block marked with [data-slide] behaves like a page of
+     the invitation. A block that fits the viewport changes immediately on
+     one wheel turn. A taller block (for example, the RSVP form) scrolls
+     naturally until its own top or bottom edge, then the next wheel turn
+     moves to the adjacent block. Disabled below 761px so touch/mobile
+     scrolling stays natural. */
   (function () {
     var slides = Array.prototype.slice.call(document.querySelectorAll("[data-slide]"));
     if (!slides.length) return;

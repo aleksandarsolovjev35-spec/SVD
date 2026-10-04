@@ -29,7 +29,7 @@ body{
   font-family: var(--font-body);
   color: var(--ink);
   background-color: var(--cream);
-  background-image: url("../assets/texture.webp?v=9");
+  background-image: url("../assets/texture.webp?v=10");
   background-repeat: repeat;
   background-size: 420px;
   font-size: 19px;
@@ -189,9 +189,8 @@ html:not(.js) .preloader{ display:none; }
   position: relative;
   scroll-margin-top: var(--nav-offset);
 }
-/* Every wheel-scroll "slide" stop (whole sections, or a screen-sized
-   chunk inside a long section) needs the same offset so it doesn't end
-   up hidden under the fixed top nav when scrolled to. */
+/* Every wheel-scroll stop is a semantic block. Keep its landing point
+   clear of the fixed top nav. */
 [data-slide]{ scroll-margin-top: var(--nav-offset); }
 
 /* ===================== ONE-SLIDE-PER-SCROLL NAVIGATION ==================
@@ -223,7 +222,7 @@ html:not(.js) .preloader{ display:none; }
   position:absolute; left:50%; top:50%; transform: translate(-50%,-50%);
   display:flex; align-items:center; justify-content:center;
   background-color: var(--cream);
-  background-image: url("../assets/texture.webp?v=9");
+  background-image: url("../assets/texture.webp?v=10");
   background-repeat: repeat;
   background-size: 420px;
   padding: 0 14px;
