@@ -4,7 +4,7 @@
   --cream-deep: #efe0c8;
   --ink: #4a3324;
   --ink-soft: #6b5643;
-  --gold: #a9813f;
+  --gold: #86621f;
   --gold-light: #cdae95;
   --burgundy: #7c1f2b;
   --burgundy-deep: #5c141d;
@@ -13,6 +13,7 @@
   --font-body: "Cormorant Garamond", Georgia, serif;
   --font-script: "Great Vibes", cursive;
   --section-max: 880px;
+  --nav-offset: 84px;
 }
 
 *,*::before,*::after{box-sizing:border-box;}
@@ -28,7 +29,7 @@ body{
   font-family: var(--font-body);
   color: var(--ink);
   background-color: var(--cream);
-  background-image: url("../assets/texture.webp?v=7");
+  background-image: url("../assets/texture.webp?v=9");
   background-repeat: repeat;
   background-size: 420px;
   font-size: 19px;
@@ -36,6 +37,7 @@ body{
   overflow-x: hidden;
   position: relative;
 }
+body.menu-open{ overflow:hidden; }
 img{max-width:100%; display:block;}
 a{color:inherit; text-decoration:none;}
 h1,h2,h3{font-family: var(--font-head); font-weight:600; margin:0;}
@@ -59,6 +61,7 @@ p{margin:0;}
   transition: opacity .8s ease, visibility .8s ease;
 }
 .preloader.is-hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+html:not(.js) .preloader{ display:none; }
 .preloader__monogram{
   font-family: var(--font-head);
   font-size: 2.2rem;
@@ -89,6 +92,7 @@ p{margin:0;}
   position: fixed; top:0; left:0; right:0; z-index: 500;
   display:flex; align-items:center; justify-content:space-between;
   padding: 16px 32px;
+  padding-top: calc(16px + env(safe-area-inset-top));
   background: rgba(246, 236, 221, 0);
   backdrop-filter: blur(0px);
   transition: background .4s ease, backdrop-filter .4s ease, padding .3s ease, box-shadow .4s ease;
@@ -98,6 +102,7 @@ p{margin:0;}
   backdrop-filter: blur(6px);
   box-shadow: 0 2px 18px rgba(74,51,36,.08);
   padding: 10px 32px;
+  padding-top: calc(10px + env(safe-area-inset-top));
 }
 .site-nav__logo{
   font-family: var(--font-head);
@@ -182,26 +187,25 @@ p{margin:0;}
 /* ===================== SECTIONS ===================== */
 .section{
   position: relative;
-  scroll-margin-top: 84px;
+  scroll-margin-top: var(--nav-offset);
 }
 /* Every wheel-scroll "slide" stop (whole sections, or a screen-sized
    chunk inside a long section) needs the same offset so it doesn't end
    up hidden under the fixed top nav when scrolled to. */
-[data-slide]{ scroll-margin-top: 84px; }
+[data-slide]{ scroll-margin-top: var(--nav-offset); }
 
 /* ===================== ONE-SLIDE-PER-SCROLL NAVIGATION ==================
    The mouse wheel moves exactly one section ("slide") per turn — see the
    "One-section-per-wheel-turn navigation" block in js/script.js. That JS
-   drives a smooth scrollIntoView() itself, so no CSS scroll-snap is used
+   drives a smooth window.scrollTo() itself, so no CSS scroll-snap is used
    here any more (a plain CSS scroll-snap can't guarantee a single wheel
    notch reaches the next section, and forcing the short footer to be a
-   snap point previously caused an empty gap below it). html{scroll-behavior}
-   is left to the browser default because the JS explicitly requests a
-   smooth transition on every programmatic scroll it performs. */
+   snap point previously caused an empty gap below it). */
 
 .hero{
   display:flex; align-items:center; justify-content:center;
   min-height: 100vh;
+  min-height: 100svh;
   padding-top: 70px;
 }
 
@@ -219,7 +223,7 @@ p{margin:0;}
   position:absolute; left:50%; top:50%; transform: translate(-50%,-50%);
   display:flex; align-items:center; justify-content:center;
   background-color: var(--cream);
-  background-image: url("../assets/texture.webp?v=7");
+  background-image: url("../assets/texture.webp?v=9");
   background-repeat: repeat;
   background-size: 420px;
   padding: 0 14px;
@@ -540,6 +544,16 @@ p{margin:0;}
   text-align:center; font-size: .85rem; color: var(--ink-soft);
   margin: -20px 0 26px;
 }
+html:not(.js) .rsvp-form{ display:none; }
+.noscript-note{
+  max-width: 560px;
+  margin: 0 auto 26px;
+  padding: 12px 16px;
+  text-align: center;
+  color: var(--burgundy-deep);
+  border: 1px solid rgba(124,31,43,.3);
+  background: rgba(124,31,43,.07);
+}
 .req-mark{ color: var(--burgundy); margin-left: 2px; }
 
 .hp-field{
@@ -605,6 +619,13 @@ p{margin:0;}
   transition: border-color .2s ease;
 }
 .rsvp-form__field textarea{ resize: vertical; border: 1px solid var(--gold-light); padding: 10px; }
+.rsvp-form__field input:focus-visible,
+.rsvp-form__field textarea:focus-visible,
+.guest-names__row input:focus-visible{
+  outline: 2px solid var(--burgundy);
+  outline-offset: 3px;
+  border-color: var(--burgundy);
+}
 .rsvp-form__field.has-error input,
 .rsvp-form__field.has-error textarea{ border-color: var(--burgundy); }
 .field-error{
@@ -682,7 +703,7 @@ p{margin:0;}
 /* .script-name defaults to burgundy for use on light backgrounds; the
    footer has a dark background, so it needs a light colour to stay
    readable instead of dark-on-dark. */
-.site-footer .script-name{ color: var(--gold); margin-top: 0; }
+.site-footer .script-name{ color: var(--gold-light); margin-top: 0; }
 .site-footer p{ margin-top: 4px; opacity: .85; font-size: .95rem; }
 .site-footer__nav{
   display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
@@ -742,10 +763,12 @@ p{margin:0;}
 
 @media (max-width: 720px){
   .site-nav__links{
-    position: fixed; top: 0; right: 0; height: 100vh; width: 78%; max-width: 320px;
+    position: fixed; top: 0; right: 0; height: 100vh; height: 100dvh; width: 78%; max-width: 320px;
     background: var(--cream);
     flex-direction: column; align-items:flex-start; justify-content:center;
     gap: 30px; padding: 40px;
+    padding-top: calc(40px + env(safe-area-inset-top));
+    padding-bottom: calc(40px + env(safe-area-inset-bottom));
     transform: translateX(100%);
     transition: transform .4s ease;
     box-shadow: -8px 0 30px rgba(0,0,0,.15);
@@ -773,4 +796,16 @@ p{margin:0;}
   .rsvp-form__row--pair{ grid-template-columns: 1fr; }
   .rsvp-form, .rsvp-thanks{ padding: 32px 22px; }
   .hero__names{ letter-spacing: 0; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  html,
+  *,
+  *::before,
+  *::after{
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 }

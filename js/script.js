@@ -2,14 +2,22 @@
   "use strict";
 
   /* ---------- Preloader ---------- */
+  var preloader = document.getElementById("preloader");
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var preloaderHidden = false;
+
+  function hidePreloader() {
+    if (!preloader || preloaderHidden) return;
+    preloaderHidden = true;
+    preloader.classList.add("is-hidden");
+  }
+
   window.addEventListener("load", function () {
-    var pre = document.getElementById("preloader");
-    if (pre) {
-      setTimeout(function () {
-        pre.classList.add("is-hidden");
-      }, 350);
-    }
+    window.setTimeout(hidePreloader, reduceMotion ? 0 : 350);
   });
+  /* A failed third-party font request must never leave the invitation
+     permanently covered by the loader. */
+  window.setTimeout(hidePreloader, reduceMotion ? 500 : 3000);
 
   /* ---------- Progress bar + nav scrolled state ---------- */
   var progressBar = document.getElementById("progressBar");
@@ -32,16 +40,72 @@
   var burgerBtn = document.getElementById("burgerBtn");
   var navLinks = document.getElementById("navLinks");
   if (burgerBtn && navLinks) {
+    var firstNavLink = navLinks.querySelector("a");
+    var mobileNavQuery = window.matchMedia("(max-width: 720px)");
+
+    function syncMenuAccessibility(isOpen) {
+      var isMobile = mobileNavQuery.matches;
+      var shouldDisableLinks = isMobile && !isOpen;
+      if (isMobile) {
+        navLinks.setAttribute("aria-hidden", String(!isOpen));
+        navLinks.inert = !isOpen;
+      } else {
+        navLinks.removeAttribute("aria-hidden");
+        navLinks.inert = false;
+      }
+      navLinks.querySelectorAll("a").forEach(function (a) {
+        if (!a.hasAttribute("data-menu-tabindex")) {
+          a.setAttribute("data-menu-tabindex", a.getAttribute("tabindex") || "");
+        }
+        if (shouldDisableLinks) {
+          a.tabIndex = -1;
+        } else {
+          var savedTabIndex = a.getAttribute("data-menu-tabindex");
+          if (savedTabIndex) a.setAttribute("tabindex", savedTabIndex);
+          else a.removeAttribute("tabindex");
+        }
+      });
+    }
+
+    function setMenuOpen(isOpen, returnFocus) {
+      burgerBtn.classList.toggle("is-open", isOpen);
+      navLinks.classList.toggle("is-open", isOpen);
+      document.body.classList.toggle("menu-open", isOpen);
+      burgerBtn.setAttribute("aria-expanded", String(isOpen));
+      burgerBtn.setAttribute("aria-label", isOpen ? "Закрыть меню" : "Открыть меню");
+      syncMenuAccessibility(isOpen);
+      if (isOpen && firstNavLink) firstNavLink.focus();
+      if (!isOpen && returnFocus) burgerBtn.focus();
+    }
+
+    setMenuOpen(false, false);
     burgerBtn.addEventListener("click", function () {
-      burgerBtn.classList.toggle("is-open");
-      navLinks.classList.toggle("is-open");
+      setMenuOpen(!navLinks.classList.contains("is-open"), false);
     });
     navLinks.querySelectorAll("a").forEach(function (a) {
       a.addEventListener("click", function () {
-        burgerBtn.classList.remove("is-open");
-        navLinks.classList.remove("is-open");
+        setMenuOpen(false, false);
       });
     });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && navLinks.classList.contains("is-open")) {
+        setMenuOpen(false, true);
+      }
+    });
+    document.addEventListener("click", function (e) {
+      if (!navLinks.classList.contains("is-open")) return;
+      if (!navLinks.contains(e.target) && !burgerBtn.contains(e.target)) {
+        setMenuOpen(false, false);
+      }
+    });
+    var onNavBreakpointChange = function () {
+      setMenuOpen(false, false);
+    };
+    if (mobileNavQuery.addEventListener) {
+      mobileNavQuery.addEventListener("change", onNavBreakpointChange);
+    } else if (mobileNavQuery.addListener) {
+      mobileNavQuery.addListener(onNavBreakpointChange);
+    }
   }
 
   /* ---------- Active section highlighting (nav + dots) ---------- */
@@ -51,14 +115,21 @@
 
   function setActive(id) {
     navAnchors.forEach(function (a) {
-      a.classList.toggle("is-active", a.getAttribute("href") === "#" + id);
+      var isActive = a.getAttribute("href") === "#" + id;
+      a.classList.toggle("is-active", isActive);
+      if (isActive) a.setAttribute("aria-current", "location");
+      else a.removeAttribute("aria-current");
     });
     dotAnchors.forEach(function (a) {
-      a.classList.toggle("is-active", a.getAttribute("href") === "#" + id);
+      var isActive = a.getAttribute("href") === "#" + id;
+      a.classList.toggle("is-active", isActive);
+      if (isActive) a.setAttribute("aria-current", "location");
+      else a.removeAttribute("aria-current");
     });
   }
 
-  if ("IntersectionObserver" in window && sections.length) {
+  if (sections.length) setActive(sections[0].id);
+  if (typeof window.IntersectionObserver === "function" && sections.length) {
     var navObserver = new IntersectionObserver(
       function (entries) {
         entries.forEach(function (entry) {
@@ -90,9 +161,10 @@
     var unlockTimer = null;
     var WHEEL_THRESHOLD = 4;
     var EDGE = 48;
-    var LOCK_MS = 850;
+    var LOCK_MS = reduceMotion ? 0 : 850;
     /* Keep the JS navigation in sync with [data-slide]'s CSS offset. */
-    var NAV_OFFSET = 84;
+    var NAV_OFFSET = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--nav-offset")) || 84;
+    var scrollBehavior = reduceMotion ? "auto" : "smooth";
 
     function nearAtBottom() {
       return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
@@ -127,11 +199,11 @@
     function goToSlide(idx) {
       idx = Math.max(0, Math.min(slides.length - 1, idx));
       lock();
-      window.scrollTo({ top: slideTarget(idx), behavior: "smooth" });
+      window.scrollTo({ top: slideTarget(idx), behavior: scrollBehavior });
     }
     function goToDocumentEnd() {
       lock();
-      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: scrollBehavior });
     }
 
     window.addEventListener(
@@ -188,7 +260,7 @@
 
   /* ---------- Reveal on scroll ---------- */
   var revealEls = document.querySelectorAll(".reveal");
-  if ("IntersectionObserver" in window && revealEls.length) {
+  if (typeof window.IntersectionObserver === "function" && revealEls.length) {
     var revealObserver = new IntersectionObserver(
       function (entries, obs) {
         entries.forEach(function (entry) {
@@ -240,6 +312,13 @@
   if (rsvpForm) {
     var COUPLE_EMAIL = "anastasia.ivan.wedding@example.com";
     var DRAFT_KEY = "wedding_rsvp_draft";
+    var DRAFT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+    /* Keep an unfinished answer in this tab only, not on a shared device
+       indefinitely. */
+    var draftStorage = null;
+    try { draftStorage = window.sessionStorage; } catch (err) { /* ignore */ }
+    /* Remove the old client-side submission archive from earlier builds. */
+    try { window.localStorage.removeItem("wedding_rsvp"); } catch (err) { /* ignore */ }
     var MAX_GUESTS = 10;
 
     var countField = document.getElementById("countField");
@@ -269,6 +348,7 @@
     rsvpForm.querySelectorAll('input[name="attending"]').forEach(function (r) {
       r.addEventListener("change", function () {
         toggleAttendingFields();
+        if (!isAttendingYes()) clearContactError();
         saveDraft();
       });
     });
@@ -283,7 +363,9 @@
       input.type = "text";
       input.name = "guest" + index;
       input.placeholder = index + ". Имя гостя";
+      input.setAttribute("aria-label", index + ". Имя гостя");
       input.autocomplete = "off";
+      input.maxLength = 120;
       input.value = value || "";
       input.addEventListener("input", saveDraft);
       row.appendChild(input);
@@ -377,6 +459,16 @@
 
     var PHONE_RE = /^[+]?[\d\s()\-]{7,20}$/;
     var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    var CONTACT_ERROR = "Оставьте телефон или e-mail, чтобы мы могли с вами связаться.";
+
+    function clearContactError() {
+      if (phoneError && phoneError.textContent === CONTACT_ERROR) {
+        setFieldError(phoneInput, phoneError, "");
+      }
+      if (emailError && emailError.textContent === CONTACT_ERROR) {
+        setFieldError(emailInput, emailError, "");
+      }
+    }
 
     function validateName() {
       var val = nameInput.value.trim();
@@ -416,15 +508,21 @@
       var hasContact = phoneInput.value.trim() || emailInput.value.trim();
       var isYes = isAttendingYes();
       if (isYes && !hasContact) {
-        setFieldError(phoneInput, phoneError, "Оставьте телефон или e-mail, чтобы мы могли с вами связаться.");
+        setFieldError(phoneInput, phoneError, CONTACT_ERROR);
         return false;
       }
+      clearContactError();
       return true;
     }
 
     if (nameInput) nameInput.addEventListener("blur", validateName);
     if (phoneInput) phoneInput.addEventListener("blur", function () { validatePhone(); validateContactPresence(); });
     if (emailInput) emailInput.addEventListener("blur", function () { validateEmail(); validateContactPresence(); });
+    [phoneInput, emailInput].forEach(function (el) {
+      if (el) el.addEventListener("input", function () {
+        if (phoneInput.value.trim() || emailInput.value.trim()) clearContactError();
+      });
+    });
 
     function showFormStatus(message) {
       if (!formStatus) return;
@@ -457,9 +555,10 @@
           email: data.get("email") || "",
           count: getGuestCount(),
           guestNames: getGuestNameValues(),
-          wish: data.get("wish") || ""
+          wish: data.get("wish") || "",
+          updatedAt: Date.now()
         };
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        if (draftStorage) draftStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
       } catch (err) { /* storage may be unavailable — ignore */ }
     }
 
@@ -474,33 +573,43 @@
 
     function restoreDraft() {
       var raw;
-      try { raw = localStorage.getItem(DRAFT_KEY); } catch (err) { return; }
+      try { raw = draftStorage ? draftStorage.getItem(DRAFT_KEY) : null; } catch (err) { return; }
       if (!raw) return;
       var draft;
       try { draft = JSON.parse(raw); } catch (err) { return; }
       if (!draft) return;
+      if (draft.updatedAt && Date.now() - Number(draft.updatedAt) > DRAFT_MAX_AGE_MS) {
+        clearDraft();
+        return;
+      }
 
       if (draft.attending) {
         var radio = rsvpForm.querySelector('input[name="attending"][value="' + draft.attending + '"]');
         if (radio) radio.checked = true;
       }
-      if (nameInput && draft.name) nameInput.value = draft.name;
-      if (phoneInput && draft.phone) phoneInput.value = draft.phone;
-      if (emailInput && draft.email) emailInput.value = draft.email;
+      if (nameInput && draft.name) nameInput.value = String(draft.name).slice(0, 120);
+      if (phoneInput && draft.phone) phoneInput.value = String(draft.phone).slice(0, 30);
+      if (emailInput && draft.email) emailInput.value = String(draft.email).slice(0, 254);
       if (wishInput && draft.wish) {
-        wishInput.value = draft.wish;
+        wishInput.value = String(draft.wish).slice(0, 300);
         wishInput.dispatchEvent(new Event("input"));
       }
       if (draft.count && guestNamesWrap) {
-        renderGuestRows(Math.min(MAX_GUESTS, draft.count), draft.guestNames || []);
-        if (guestCountInput) guestCountInput.value = Math.min(MAX_GUESTS, draft.count);
+        var restoredCount = Math.min(MAX_GUESTS, Math.max(1, parseInt(draft.count, 10) || 1));
+        var restoredNames = Array.isArray(draft.guestNames)
+          ? draft.guestNames.map(function (value) { return String(value).slice(0, 120); })
+          : [];
+        renderGuestRows(restoredCount, restoredNames);
+        if (guestCountInput) guestCountInput.value = restoredCount;
       }
       toggleAttendingFields();
     }
     restoreDraft();
 
     function clearDraft() {
-      try { localStorage.removeItem(DRAFT_KEY); } catch (err) { /* ignore */ }
+      try {
+        if (draftStorage) draftStorage.removeItem(DRAFT_KEY);
+      } catch (err) { /* ignore */ }
     }
 
     /* ---- Submit ---- */
@@ -552,15 +661,9 @@
         lines.push("Пожелание: " + wish);
       }
 
-      try {
-        var stored = JSON.parse(localStorage.getItem("wedding_rsvp") || "[]");
-        stored.push({
-          name: name, phone: phone, email: email, attending: attendingLabel,
-          count: count, guestNames: guestNames, wish: wish, ts: new Date().toISOString()
-        });
-        localStorage.setItem("wedding_rsvp", JSON.stringify(stored));
-      } catch (err) { /* ignore storage errors */ }
-
+      /* Do not persist submitted personal data in localStorage. The mailto
+         draft is the hand-off to the couple; keeping a local copy would
+         expose names and contacts to anyone using the same device. */
       var subject = encodeURIComponent("RSVP: " + name + " — " + attendingLabel);
       var body = encodeURIComponent(lines.join("\n"));
       var mailtoLink = "mailto:" + COUPLE_EMAIL + "?subject=" + subject + "&body=" + body;
@@ -571,8 +674,8 @@
         if (rsvpThanks) {
           if (rsvpThanksText) {
             rsvpThanksText.textContent = isYes
-              ? "Мы получили ваш ответ и очень ждём встречи с вами."
-              : "Спасибо, что предупредили — нам будет вас не хватать!";
+              ? "Ответ подготовлен. Откройте письмо и нажмите «Отправить» — будем ждать встречи!"
+              : "Ответ подготовлен. Откройте письмо и нажмите «Отправить» — спасибо, что предупредили!";
           }
           rsvpThanks.hidden = false;
           rsvpThanks.focus();
