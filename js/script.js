@@ -132,6 +132,7 @@
   if (typeof window.IntersectionObserver === "function" && sections.length) {
     var navObserver = new IntersectionObserver(
       function (entries) {
+        if (document.documentElement.classList.contains("presentation-mode")) return;
         entries.forEach(function (entry) {
           if (entry.isIntersecting) setActive(entry.target.id);
         });
@@ -141,74 +142,111 @@
     sections.forEach(function (s) { navObserver.observe(s); });
   }
 
-  /* ---------- One-semantic-block-per-wheel-turn navigation ----------
-     Each meaningful block marked with [data-slide] behaves like a page of
-     the invitation. A block that fits the viewport changes immediately on
-     one wheel turn. A taller block (for example, the RSVP form) scrolls
-     naturally until its own top or bottom edge, then the next wheel turn
-     moves to the adjacent block. Disabled below 761px so touch/mobile
-     scrolling stays natural. */
+  /* ---------- Desktop slide deck ----------
+     On desktop, the meaningful blocks form a real slide deck: only the
+     active block is visible and the wheel changes exactly one block. A tall
+     active block remains independently scrollable until its edge is reached.
+     Touch/mobile keeps the normal document flow. */
   (function () {
-    var slides = Array.prototype.slice.call(document.querySelectorAll("[data-slide]"));
+    var main = document.getElementById("main-content");
+    if (!main) return;
+
+    var slides = Array.prototype.filter.call(
+      document.querySelectorAll("[data-slide]"),
+      function (slide) { return slide.parentElement === main; }
+    );
     if (!slides.length) return;
 
-    var desktopQuery = window.matchMedia("(min-width: 761px)");
+    var deckQuery = window.matchMedia("(min-width: 761px)");
+    var deckEnabled = false;
+    var currentIndex = 0;
     var isAnimating = false;
     var unlockTimer = null;
-    var transitionTimer = null;
     var WHEEL_THRESHOLD = 4;
-    var EDGE = 48;
-    var LOCK_MS = reduceMotion ? 0 : 850;
-    /* Keep the JS navigation in sync with [data-slide]'s CSS offset. */
-    var NAV_OFFSET = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--nav-offset")) || 84;
+    var EDGE = 2;
+    var LOCK_MS = reduceMotion ? 0 : 650;
     var scrollBehavior = reduceMotion ? "auto" : "smooth";
 
-    function nearAtBottom() {
-      return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+    function updatePresentationProgress() {
+      if (!progressBar) return;
+      var slide = slides[currentIndex];
+      var innerMax = Math.max(0, slide.scrollHeight - slide.clientHeight);
+      var innerProgress = innerMax ? slide.scrollTop / innerMax : 0;
+      var total = Math.max(1, slides.length - 1);
+      progressBar.style.width = ((currentIndex + innerProgress) / total * 100) + "%";
     }
-    function nearAtTop() {
-      return window.scrollY <= 2;
+
+    function setSlideClasses() {
+      slides.forEach(function (slide, index) {
+        slide.classList.toggle("is-active", index === currentIndex);
+      });
     }
-    function slideTop(i) {
-      return slides[i].getBoundingClientRect().top + window.scrollY;
-    }
-    function slideTarget(i) {
-      /* scroll-margin-top moves the visual landing point above the element.
-         Use the same point when detecting the currently visible slide;
-         otherwise the next wheel turn targets the slide we are already on. */
-      return Math.max(0, slideTop(i) - NAV_OFFSET);
-    }
-    function activeIndex() {
-      var y = window.scrollY + 1;
-      var idx = 0;
-      for (var i = 0; i < slides.length; i++) {
-        if (slideTarget(i) <= y) idx = i;
-      }
-      return idx;
-    }
-    function lock() {
-      isAnimating = true;
+
+    function activateSlide(index, immediate) {
+      index = Math.max(0, Math.min(slides.length - 1, index));
+      if (!immediate && index === currentIndex) return;
+
       clearTimeout(unlockTimer);
-      clearTimeout(transitionTimer);
-      if (!reduceMotion) {
-        document.body.classList.add("is-slide-transitioning");
-        transitionTimer = setTimeout(function () {
-          document.body.classList.remove("is-slide-transitioning");
+      isAnimating = !immediate;
+      currentIndex = index;
+      slides[currentIndex].scrollTop = 0;
+      setSlideClasses();
+      setActive(slides[currentIndex].id || "");
+      updatePresentationProgress();
+      if (!immediate) {
+        unlockTimer = setTimeout(function () {
+          isAnimating = false;
         }, LOCK_MS);
       }
-      unlockTimer = setTimeout(function () {
-        isAnimating = false;
-      }, LOCK_MS);
     }
-    function goToSlide(idx) {
-      idx = Math.max(0, Math.min(slides.length - 1, idx));
-      lock();
-      window.scrollTo({ top: slideTarget(idx), behavior: scrollBehavior });
+
+    function enableDeck() {
+      if (deckEnabled) return;
+      deckEnabled = true;
+      document.documentElement.classList.add("presentation-mode");
+      document.body.classList.add("presentation-mode");
+      activateSlide(currentIndex, true);
     }
-    function goToDocumentEnd() {
-      lock();
-      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: scrollBehavior });
+
+    function disableDeck() {
+      if (!deckEnabled) return;
+      deckEnabled = false;
+      document.documentElement.classList.remove("presentation-mode");
+      document.body.classList.remove("presentation-mode");
+      slides.forEach(function (slide) {
+        slide.classList.remove("is-active");
+        slide.scrollTop = 0;
+      });
+      isAnimating = false;
+      clearTimeout(unlockTimer);
+      onScroll();
     }
+
+    function syncDeckMode() {
+      if (deckQuery.matches) enableDeck();
+      else disableDeck();
+    }
+
+    function slideIndexFromHash(hash) {
+      if (!hash || hash === "#") return -1;
+      var target = document.getElementById(hash.slice(1));
+      return target ? slides.indexOf(target) : -1;
+    }
+
+    var initialSlideIndex = slideIndexFromHash(window.location.hash);
+    if (initialSlideIndex >= 0) currentIndex = initialSlideIndex;
+
+    document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+      anchor.addEventListener("click", function (event) {
+        if (!deckEnabled) return;
+        var index = slideIndexFromHash(anchor.getAttribute("href"));
+        if (index < 0) return;
+        event.preventDefault();
+        activateSlide(index, false);
+        if (history.replaceState) history.replaceState(null, "", anchor.getAttribute("href"));
+      });
+    });
+
     function targetCanConsumeWheel(target, deltaY) {
       var textarea = target && target.closest ? target.closest("textarea") : null;
       if (!textarea || textarea.scrollHeight <= textarea.clientHeight) return false;
@@ -216,57 +254,46 @@
       return textarea.scrollTop + textarea.clientHeight < textarea.scrollHeight - 1;
     }
 
-    window.addEventListener(
-      "wheel",
-      function (e) {
-        if (!desktopQuery.matches) return;
-        if (Math.abs(e.deltaY) < WHEEL_THRESHOLD) return;
-        if (targetCanConsumeWheel(e.target, e.deltaY)) return;
-        if (isAnimating) {
-          e.preventDefault();
-          return;
-        }
+    function scrollActiveSlide(deltaY) {
+      var slide = slides[currentIndex];
+      var maxScroll = Math.max(0, slide.scrollHeight - slide.clientHeight);
+      if (maxScroll <= EDGE) return false;
 
-        var idx = activeIndex();
-        var top = slideTarget(idx);
-        var bottom = idx < slides.length - 1 ? slideTarget(idx + 1) : document.documentElement.scrollHeight;
-        var height = bottom - top;
-        var viewportH = window.innerHeight;
-        var fits = height <= viewportH + 2;
-        var scrollingDown = e.deltaY > 0;
+      var nextScroll = Math.max(0, Math.min(maxScroll, slide.scrollTop + deltaY));
+      if (nextScroll === slide.scrollTop) return false;
+      slide.scrollTo({ top: nextScroll, behavior: scrollBehavior });
+      updatePresentationProgress();
+      return true;
+    }
 
-        if (scrollingDown) {
-          var distanceToBottomEdge = bottom - (window.scrollY + viewportH);
-          if (fits || distanceToBottomEdge <= EDGE) {
-            if (idx < slides.length - 1) {
-              e.preventDefault();
-              goToSlide(idx + 1);
-            } else if (!nearAtBottom()) {
-              e.preventDefault();
-              goToDocumentEnd();
-            }
-            /* else: already at the very bottom — let the native (no-op)
-               scroll happen, nothing left to jump to */
-          }
-          /* else: slide is taller than the screen and we're not near its
-             end yet — let the browser scroll normally inside it */
-        } else {
-          var distanceFromTop = window.scrollY - top;
-          if (fits || distanceFromTop <= EDGE) {
-            if (idx > 0) {
-              e.preventDefault();
-              goToSlide(idx - 1);
-            } else if (!nearAtTop()) {
-              e.preventDefault();
-              goToSlide(0);
-            }
-          }
-          /* else: let the browser scroll normally back up inside the
-             oversized slide until its own top edge is reached */
-        }
-      },
-      { passive: false }
-    );
+    window.addEventListener("wheel", function (event) {
+      if (!deckEnabled) return;
+      if (Math.abs(event.deltaY) < WHEEL_THRESHOLD) return;
+      if (targetCanConsumeWheel(event.target, event.deltaY)) return;
+
+      event.preventDefault();
+      if (isAnimating) return;
+      if (scrollActiveSlide(event.deltaY)) return;
+
+      activateSlide(currentIndex + (event.deltaY > 0 ? 1 : -1), false);
+    }, { passive: false });
+
+    slides.forEach(function (slide) {
+      slide.addEventListener("scroll", function () {
+        if (deckEnabled && slides[currentIndex] === slide) updatePresentationProgress();
+      }, { passive: true });
+    });
+
+    window.addEventListener("hashchange", function () {
+      if (!deckEnabled) return;
+      var index = slideIndexFromHash(window.location.hash);
+      if (index >= 0) activateSlide(index, false);
+    });
+
+    if (deckQuery.addEventListener) deckQuery.addEventListener("change", syncDeckMode);
+    else if (deckQuery.addListener) deckQuery.addListener(syncDeckMode);
+    window.addEventListener("resize", updatePresentationProgress, { passive: true });
+    syncDeckMode();
   })();
 
   /* ---------- Reveal on scroll ---------- */

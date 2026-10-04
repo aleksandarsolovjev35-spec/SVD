@@ -29,7 +29,7 @@ body{
   font-family: var(--font-body);
   color: var(--ink);
   background-color: var(--cream);
-  background-image: url("../assets/texture.webp?v=10");
+  background-image: url("../assets/texture.webp?v=11");
   background-repeat: repeat;
   background-size: 420px;
   font-size: 19px;
@@ -38,20 +38,6 @@ body{
   position: relative;
 }
 body.menu-open{ overflow:hidden; }
-body::after{
-  content:"";
-  position:fixed;
-  inset:0;
-  z-index:450;
-  pointer-events:none;
-  opacity:0;
-  background-color:var(--cream);
-  background-image:url("../assets/texture.webp?v=10");
-  background-repeat:repeat;
-  background-size:420px;
-  transition:opacity .28s ease;
-}
-body.is-slide-transitioning::after{ opacity:1; }
 img{max-width:100%; display:block;}
 a{color:inherit; text-decoration:none;}
 h1,h2,h3{font-family: var(--font-head); font-weight:600; margin:0;}
@@ -207,13 +193,51 @@ html:not(.js) .preloader{ display:none; }
    clear of the fixed top nav. */
 [data-slide]{ scroll-margin-top: var(--nav-offset); }
 
-/* ===================== ONE-SLIDE-PER-SCROLL NAVIGATION ==================
-   The mouse wheel moves exactly one section ("slide") per turn — see the
-   "One-section-per-wheel-turn navigation" block in js/script.js. That JS
-   drives a smooth window.scrollTo() itself, so no CSS scroll-snap is used
-   here any more (a plain CSS scroll-snap can't guarantee a single wheel
-   notch reaches the next section, and forcing the short footer to be a
-   snap point previously caused an empty gap below it). */
+/* ===================== DESKTOP SLIDE DECK =====================
+   On desktop, JavaScript turns the marked semantic blocks into a single
+   viewport-sized deck. Only the active block is visible; mobile keeps the
+   normal document flow and touch scrolling. */
+@media (min-width: 761px){
+  html.presentation-mode,
+  html.presentation-mode body{
+    overflow: hidden;
+  }
+  body.presentation-mode{
+    height: 100vh;
+    overflow: hidden;
+  }
+  body.presentation-mode #main-content{
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+  }
+  body.presentation-mode #main-content > [data-slide]{
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    height: 100%;
+    max-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(24px);
+    pointer-events: none;
+    scroll-margin-top: 0;
+    transition: opacity .42s ease, transform .42s ease, visibility 0s linear .42s;
+  }
+  body.presentation-mode #main-content > [data-slide].is-active{
+    z-index: 1;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+    transition-delay: 0s;
+  }
+  body.presentation-mode #main-content > .divider-rule{
+    display: none;
+  }
+}
 
 .hero{
   display:flex; align-items:center; justify-content:center;
@@ -236,7 +260,7 @@ html:not(.js) .preloader{ display:none; }
   position:absolute; left:50%; top:50%; transform: translate(-50%,-50%);
   display:flex; align-items:center; justify-content:center;
   background-color: var(--cream);
-  background-image: url("../assets/texture.webp?v=10");
+  background-image: url("../assets/texture.webp?v=11");
   background-repeat: repeat;
   background-size: 420px;
   padding: 0 14px;
@@ -833,7 +857,6 @@ html:not(.js) .reveal{
 }
 
 @media (prefers-reduced-motion: reduce){
-  body::after{ display:none; }
   html,
   *,
   *::before,
