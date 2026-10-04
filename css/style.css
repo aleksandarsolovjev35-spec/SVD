@@ -741,6 +741,10 @@ html:not(.js) .rsvp-form{ display:none; }
   opacity: 1;
   transform: translateY(0);
 }
+html:not(.js) .reveal{
+  opacity: 1;
+  transform: none;
+}
 
 /* ===================== RESPONSIVE ===================== */
 @media (max-width: 860px){
@@ -762,6 +766,7 @@ html:not(.js) .rsvp-form{ display:none; }
 }
 
 @media (max-width: 720px){
+  :root{ --nav-offset: calc(84px + env(safe-area-inset-top)); }
   .site-nav__links{
     position: fixed; top: 0; right: 0; height: 100vh; height: 100dvh; width: 78%; max-width: 320px;
     background: var(--cream);
@@ -776,6 +781,22 @@ html:not(.js) .rsvp-form{ display:none; }
   .site-nav__links.is-open{ transform: translateX(0); }
   .site-nav__burger{ display:flex; }
   .site-nav__rsvp{ margin-top: 10px; }
+
+  html:not(.js) .site-nav__burger{ display:none; }
+  html:not(.js) .site-nav__links{
+    position: static;
+    width: auto;
+    max-width: none;
+    height: auto;
+    padding: 0;
+    transform: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px 14px;
+    background: transparent;
+    box-shadow: none;
+  }
 
   .timeline{ grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .timeline__icon{ width:40px; height:40px; padding:9px; }

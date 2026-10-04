@@ -84,7 +84,7 @@
     });
     navLinks.querySelectorAll("a").forEach(function (a) {
       a.addEventListener("click", function () {
-        setMenuOpen(false, false);
+        setMenuOpen(false, mobileNavQuery.matches);
       });
     });
     document.addEventListener("keydown", function (e) {
@@ -205,12 +205,19 @@
       lock();
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: scrollBehavior });
     }
+    function targetCanConsumeWheel(target, deltaY) {
+      var textarea = target && target.closest ? target.closest("textarea") : null;
+      if (!textarea || textarea.scrollHeight <= textarea.clientHeight) return false;
+      if (deltaY < 0) return textarea.scrollTop > 0;
+      return textarea.scrollTop + textarea.clientHeight < textarea.scrollHeight - 1;
+    }
 
     window.addEventListener(
       "wheel",
       function (e) {
         if (!desktopQuery.matches) return;
         if (Math.abs(e.deltaY) < WHEEL_THRESHOLD) return;
+        if (targetCanConsumeWheel(e.target, e.deltaY)) return;
         if (isAnimating) {
           e.preventDefault();
           return;
@@ -584,7 +591,9 @@
       }
 
       if (draft.attending) {
-        var radio = rsvpForm.querySelector('input[name="attending"][value="' + draft.attending + '"]');
+        var radio = Array.prototype.slice.call(rsvpForm.querySelectorAll('input[name="attending"]')).filter(function (option) {
+          return option.value === String(draft.attending);
+        })[0];
         if (radio) radio.checked = true;
       }
       if (nameInput && draft.name) nameInput.value = String(draft.name).slice(0, 120);
