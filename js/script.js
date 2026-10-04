@@ -91,6 +91,8 @@
     var WHEEL_THRESHOLD = 4;
     var EDGE = 48;
     var LOCK_MS = 850;
+    /* Keep the JS navigation in sync with [data-slide]'s CSS offset. */
+    var NAV_OFFSET = 84;
 
     function nearAtBottom() {
       return window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
@@ -101,11 +103,17 @@
     function slideTop(i) {
       return slides[i].getBoundingClientRect().top + window.scrollY;
     }
+    function slideTarget(i) {
+      /* scroll-margin-top moves the visual landing point above the element.
+         Use the same point when detecting the currently visible slide;
+         otherwise the next wheel turn targets the slide we are already on. */
+      return Math.max(0, slideTop(i) - NAV_OFFSET);
+    }
     function activeIndex() {
       var y = window.scrollY + 1;
       var idx = 0;
       for (var i = 0; i < slides.length; i++) {
-        if (slideTop(i) <= y) idx = i;
+        if (slideTarget(i) <= y) idx = i;
       }
       return idx;
     }
@@ -119,7 +127,7 @@
     function goToSlide(idx) {
       idx = Math.max(0, Math.min(slides.length - 1, idx));
       lock();
-      slides[idx].scrollIntoView({ behavior: "smooth", block: "start" });
+      window.scrollTo({ top: slideTarget(idx), behavior: "smooth" });
     }
     function goToDocumentEnd() {
       lock();
@@ -137,8 +145,8 @@
         }
 
         var idx = activeIndex();
-        var top = slideTop(idx);
-        var bottom = idx < slides.length - 1 ? slideTop(idx + 1) : document.documentElement.scrollHeight;
+        var top = slideTarget(idx);
+        var bottom = idx < slides.length - 1 ? slideTarget(idx + 1) : document.documentElement.scrollHeight;
         var height = bottom - top;
         var viewportH = window.innerHeight;
         var fits = height <= viewportH + 2;
