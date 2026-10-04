@@ -163,9 +163,8 @@
     var isAnimating = false;
     var unlockTimer = null;
     var WHEEL_THRESHOLD = 4;
-    var EDGE = 2;
+    var EDGE = 48;
     var LOCK_MS = reduceMotion ? 0 : 650;
-    var scrollBehavior = reduceMotion ? "auto" : "smooth";
 
     function updatePresentationProgress() {
       if (!progressBar) return;
@@ -258,18 +257,23 @@
     function targetCanConsumeWheel(target, deltaY) {
       var textarea = target && target.closest ? target.closest("textarea") : null;
       if (!textarea || textarea.scrollHeight <= textarea.clientHeight) return false;
-      if (deltaY < 0) return textarea.scrollTop > 0;
-      return textarea.scrollTop + textarea.clientHeight < textarea.scrollHeight - 1;
+      var threshold = Math.max(EDGE, Math.abs(deltaY));
+      if (deltaY < 0) return textarea.scrollTop > threshold;
+      return textarea.scrollTop + textarea.clientHeight < textarea.scrollHeight - threshold;
     }
 
     function scrollActiveSlide(deltaY) {
       var slide = slides[currentIndex];
       var maxScroll = Math.max(0, slide.scrollHeight - slide.clientHeight);
-      if (maxScroll <= EDGE) return false;
+      var distanceToEdge = deltaY > 0 ? maxScroll - slide.scrollTop : slide.scrollTop;
+      var threshold = Math.max(EDGE, Math.abs(deltaY));
+      if (maxScroll <= EDGE || distanceToEdge <= threshold) return false;
 
       var nextScroll = Math.max(0, Math.min(maxScroll, slide.scrollTop + deltaY));
       if (nextScroll === slide.scrollTop) return false;
-      slide.scrollTo({ top: nextScroll, behavior: scrollBehavior });
+      /* Wheel input should be deterministic; only slide-to-slide changes
+         animate, while reading inside a long block follows the wheel. */
+      slide.scrollTop = nextScroll;
       updatePresentationProgress();
       return true;
     }
